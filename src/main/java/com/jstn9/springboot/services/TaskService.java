@@ -1,11 +1,11 @@
 package com.jstn9.springboot.services;
 
+import com.jstn9.springboot.exceptions.TaskNotFoundException;
 import com.jstn9.springboot.models.Task;
 import com.jstn9.springboot.repositories.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TaskService {
@@ -20,8 +20,9 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
-    public Optional<Task> getTaskById(int id) {
-        return taskRepository.findById(id);
+    public Task getTaskById(int id) {
+        return taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));
     }
 
     public Task createTask(Task task) {
@@ -29,19 +30,41 @@ public class TaskService {
     }
 
     public Task updateTask(Integer id, Task updatedTask) {
-        return taskRepository.findById(id)
-                .map(task -> {
-                    task.setName(updatedTask.getName());
-                    task.setDescription(updatedTask.getDescription());
-                    task.setStatus(updatedTask.getStatus());
-                    task.setPriority(updatedTask.getPriority());
-                    task.setDueDate(updatedTask.getDueDate());
-                    task.setUpdatedAt(updatedTask.getUpdatedAt());
-                    return taskRepository.save(task);
-                }).orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+        Task existingTask = getTaskById(id);
+
+        if (updatedTask.getName() != null) {
+            existingTask.setName(updatedTask.getName());
+        }
+
+        if (updatedTask.getDescription() != null) {
+            existingTask.setDescription(updatedTask.getDescription());
+        }
+
+        if (updatedTask.getStatus() != null) {
+            existingTask.setStatus(updatedTask.getStatus());
+        }
+
+        if (updatedTask.getPriority() != null) {
+            existingTask.setPriority(updatedTask.getPriority());
+        }
+
+        if (updatedTask.getDueDate() != null) {
+            existingTask.setDueDate(updatedTask.getDueDate());
+        }
+
+        return taskRepository.save(existingTask);
+    }
+
+    public Task replaceTask(Integer id, Task newTask) {
+        Task existing = getTaskById(id);
+        newTask.setCreatedAt(existing.getCreatedAt());
+        return taskRepository.save(newTask);
     }
 
     public void deleteTask(Integer id) {
+        if (!taskRepository.existsById(id)) {
+            throw new TaskNotFoundException("Task not found with id: " + id);
+        }
         taskRepository.deleteById(id);
     }
 }

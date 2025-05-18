@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Todo List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: #fff;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+            color: #555;
+        }
+        tr:hover {
+            background-color: #f7f7f7;
+        }
+        button {
+            margin-right: 5px;
+            padding: 6px 10px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        button.delete-btn {
+            background-color: #dc3545;
+        }
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+        form {
+            margin-bottom: 30px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+            border-radius: 6px;
+        }
+        input, select {
+            padding: 8px;
+            margin-right: 10px;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+<h1>Todo List</h1>
+
+<form id="taskForm">
+    <input type="text" id="name" placeholder="Task name" required />
+    <input type="text" id="description" placeholder="Description" />
+    <select id="status">
+        <option value="">Status (optional)</option>
+        <option value="PENDING">PENDING</option>
+        <option value="IN_PROGRESS">IN_PROGRESS</option>
+        <option value="COMPLETED">COMPLETED</option>
+    </select>
+    <select id="priority">
+        <option value="">Priority (optional)</option>
+        <option value="LOW">LOW</option>
+        <option value="MEDIUM">MEDIUM</option>
+        <option value="HIGH">HIGH</option>
+    </select>
+    <button type="submit" id="submitBtn">Add Task</button>
+    <button type="button" id="cancelEditBtn" style="display:none;">Cancel Edit</button>
+</form>
+
+<table id="tasksTable">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Priority</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Задачи появятся здесь -->
+    </tbody>
+</table>
+
+<script>
+    const apiUrl = '/api/tasks';
+
+    let editTaskId = null;
+
+    async function fetchTasks() {
+        const response = await fetch(apiUrl);
+        const tasks = await response.json();
+        renderTasks(tasks);
+    }
+
+    function renderTasks(tasks) {
+        const tbody = document.querySelector('#tasksTable tbody');
+        tbody.innerHTML = '';
+        tasks.forEach(task => {
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                    <td>${task.id ?? ''}</td>
+                    <td>${task.name ?? ''}</td>
+                    <td>${task.description ?? ''}</td>
+                    <td>${task.status ?? ''}</td>
+                    <td>${task.priority ?? ''}</td>
+                    <td>
+                        <button onclick="deleteTask(${task.id})" class="delete-btn">Delete</button>
+                        <button onclick="startEditTask(${task.id})">Edit</button>
+                    </td>
+                `;
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('taskForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('name').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const status = document.getElementById('status').value;
+        const priority = document.getElementById('priority').value;
+
+        if (!name) {
+            alert('Name is required');
+            return;
+        }
+
+        const taskData = {
+            name,
+            description: description || null,
+            status: status || null,
+            priority: priority || null
+        };
+
+        if (editTaskId === null) {
+            // Создать новую задачу
+            await fetch(apiUrl, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(taskData)
+            });
+        } else {
+            // Обновить существующую
+            await fetch(`${apiUrl}/${editTaskId}`, {
+                method: 'PUT', // или PATCH, если в API поддерживается
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(taskData)
+            });
+            editTaskId = null;
+            document.getElementById('submitBtn').textContent = 'Add Task';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        }
+
+        e.target.reset();
+        fetchTasks();
+    });
+
+    async function deleteTask(id) {
+        if (!confirm('Are you sure you want to delete this task?')) return;
+
+        await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+        fetchTasks();
+    }
+
+    async function startEditTask(id) {
+        const response = await fetch(`${apiUrl}/${id}`);
+        if (!response.ok) {
+            alert('Failed to fetch task for editing');
+            return;
+        }
+        const task = await response.json();
+
+        document.getElementById('name').value = task.name || '';
+        document.getElementById('description').value = task.description || '';
+        document.getElementById('status').value = task.status || '';
+        document.getElementById('priority').value = task.priority || '';
+
+        editTaskId = id;
+        document.getElementById('submitBtn').textContent = 'Save Changes';
+        document.getElementById('cancelEditBtn').style.display = 'inline-block';
+    }
+
+    document.getElementById('cancelEditBtn').addEventListener('click', () => {
+        editTaskId = null;
+        document.getElementById('taskForm').reset();
+        document.getElementById('submitBtn').textContent = 'Add Task';
+        document.getElementById('cancelEditBtn').style.display = 'none';
+    });
+
+    fetchTasks();
+</script>
+</body>
+</html>

@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Map<String, String> handleGenericException(Exception ex) {
+    public Map<String, String> handleGenericException() {
         Map<String, String> error = new HashMap<>();
         error.put("error", "An unexpected error occurred");
         return error;
