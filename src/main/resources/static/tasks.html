@@ -96,7 +96,6 @@
     </tr>
     </thead>
     <tbody>
-    <!-- Задачи появятся здесь -->
     </tbody>
 </table>
 
@@ -154,16 +153,16 @@
         };
 
         if (editTaskId === null) {
-            // Создать новую задачу
+
             await fetch(apiUrl, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(taskData)
             });
         } else {
-            // Обновить существующую
+
             await fetch(`${apiUrl}/${editTaskId}`, {
-                method: 'PUT', // или PATCH, если в API поддерживается
+                method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(taskData)
             });

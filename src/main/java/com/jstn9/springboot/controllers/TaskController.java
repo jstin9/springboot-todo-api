@@ -93,7 +93,7 @@ public class TaskController {
     @PutMapping("/{id}")
     public TaskDTO replaceTask(@PathVariable int id, @Valid @RequestBody TaskDTO taskDTO) {
         Task newTask = convertToTask(taskDTO);
-        newTask.setId(id); // важно!
+        newTask.setId(id);
         Task updated = taskService.replaceTask(id, newTask);
         return convertToTaskDTO(updated);
     }

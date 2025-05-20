@@ -3,6 +3,7 @@ package com.jstn9.springboot.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.jstn9.springboot.enums.Priority;
 import com.jstn9.springboot.enums.Status;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ public class TaskDTO {
     private Priority priority;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
+    @FutureOrPresent(message = "Due date must be today or in the future")
     private LocalDate dueDate;
 
     public TaskDTO() {
